@@ -18,10 +18,10 @@ export PATH="$FLUTTER_SDK_DIR/bin:$PATH"
 export FLUTTER_HOME="$FLUTTER_SDK_DIR"
 
 # 4. Verify Version (This will trigger the first-run download of artifacts)
-$FLUTTER_BIN --version
+flutter --version
 
 # 5. Configure Web
-$FLUTTER_BIN config --enable-web
+flutter config --enable-web
 
 # 6. Inject Environment Variables
 mkdir -p assets
@@ -31,10 +31,10 @@ echo "API_BASE_URL=$API_BASE_URL" >> assets/.env.local
 
 # 7. Build Website
 # We use the absolute path to our fresh binary to be 100% sure
-$FLUTTER_BIN precache --web
-$FLUTTER_BIN config --enable-web
-$FLUTTER_BIN pub get
-$FLUTTER_BIN build web --release --web-renderer html
+flutter precache --web
+flutter config --enable-web
+flutter pub get
+flutter build web --release --no-web-resources-cdn
 
 # 8. Move output to the expected location if necessary (Vercel uses build/web by default)
 echo "Build complete!"
