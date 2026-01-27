@@ -19,4 +19,5 @@ echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> assets/.env.local
 echo "API_BASE_URL=$API_BASE_URL" >> assets/.env.local
 
 # 5. Clear and build
-flutter build web --release
+# Using --web-renderer html to avoid CanvasKit/WASM "Aborted" errors on Vercel
+flutter build web --release --web-renderer html
