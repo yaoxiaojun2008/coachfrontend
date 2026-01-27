@@ -31,6 +31,9 @@ echo "API_BASE_URL=$API_BASE_URL" >> assets/.env.local
 
 # 7. Build Website
 # We use the absolute path to our fresh binary to be 100% sure
+$FLUTTER_BIN precache --web
+$FLUTTER_BIN config --enable-web
+$FLUTTER_BIN pub get
 $FLUTTER_BIN build web --release --web-renderer html
 
 # 8. Move output to the expected location if necessary (Vercel uses build/web by default)
