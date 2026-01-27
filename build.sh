@@ -5,10 +5,11 @@ if [ ! -d "flutter" ]; then
     git clone https://github.com/flutter/flutter.git -b stable
 fi
 
-# 2. Add Flutter to path
-export PATH="$PATH:`pwd`/flutter/bin"
+# 2. Add Flutter to path (PREPEND to ensure we use our cloned version)
+export PATH="`pwd`/flutter/bin:$PATH"
 
-# 3. Enable web
+# 3. Enable web and verify version
+flutter --version
 flutter config --enable-web
 
 # 4. Inject Environment Variables into assets/.env.local
