@@ -47,6 +47,32 @@ class _RecommendedContentScreenState extends ConsumerState<RecommendedContentScr
     }
   }
 
+  Future<void> _refreshContent() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    
+    try {
+      final service = ref.read(recommendedServiceProvider);
+      final data = await service.fetchAndCacheRecommendedContent(); // Force fetching fresh data
+      if (mounted) {
+        setState(() {
+          _newsItems = data['news'] ?? [];
+          _blogItems = data['blogs'] ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -73,15 +99,39 @@ class _RecommendedContentScreenState extends ConsumerState<RecommendedContentScr
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Recommended Content')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _Section(title: 'Latest News', items: _newsItems, onLaunch: _launchUrl),
-            const SizedBox(height: 24),
-            _Section(title: 'Latest Blogs', items: _blogItems, onLaunch: _launchUrl),
-          ],
+      appBar: AppBar(
+        title: const Text('Recommended Content'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshContent,
+            tooltip: 'Refresh content',
+          ),
+        ],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800), // Limit width for better centering
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh Content'),
+                  onPressed: _refreshContent,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _Section(title: 'Latest News', items: _newsItems, onLaunch: _launchUrl),
+                const SizedBox(height: 24),
+                _Section(title: 'Latest Blogs', items: _blogItems, onLaunch: _launchUrl),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -121,9 +171,38 @@ class _Section extends StatelessWidget {
                    decoration: BoxDecoration(
                      color: Colors.grey[200],
                      borderRadius: BorderRadius.circular(8),
-                     image: item.imageUrl != null ? DecorationImage(image: NetworkImage(item.imageUrl!), fit: BoxFit.cover) : null,
                    ),
-                   child: item.imageUrl == null ? const Icon(Icons.image, color: Colors.grey) : null,
+                   child: item.imageUrl != null 
+                     ? ClipRRect(
+                         borderRadius: BorderRadius.circular(8),
+                         child: Image.network(
+                           item.imageUrl!,
+                           width: 64,
+                           height: 64,
+                           fit: BoxFit.cover,
+                           errorBuilder: (context, error, stackTrace) {
+                             return const Icon(Icons.image, color: Colors.grey, size: 32,);
+                           },
+                           loadingBuilder: (context, child, loadingStatus) {
+                             if (loadingStatus != null) {
+                               return Center(
+                                 child: SizedBox(
+                                   width: 24,
+                                   height: 24,
+                                   child: CircularProgressIndicator(
+                                     strokeWidth: 2,
+                                     value: loadingStatus.expectedTotalBytes != null
+                                         ? loadingStatus.cumulativeBytesLoaded / loadingStatus.expectedTotalBytes!
+                                         : null,
+                                   ),
+                                 ),
+                               );
+                             }
+                             return child;
+                           },
+                         ),
+                       )
+                     : const Icon(Icons.image, color: Colors.grey, size: 32,),
                  ),
                  const SizedBox(width: 12),
                  Expanded(

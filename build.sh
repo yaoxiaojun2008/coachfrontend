@@ -20,21 +20,20 @@ export FLUTTER_HOME="$FLUTTER_SDK_DIR"
 # 4. Verify Version (This will trigger the first-run download of artifacts)
 flutter --version
 
-# 5. Configure Web
-flutter config --enable-web
 
-# 6. Inject Environment Variables
+# 5. Inject Environment Variables
 mkdir -p assets
 echo "SUPABASE_URL=$SUPABASE_URL" > assets/.env.local
 echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> assets/.env.local
 echo "API_BASE_URL=$API_BASE_URL" >> assets/.env.local
 
-# 7. Build Website
+# 6. Build Website
 # We use the absolute path to our fresh binary to be 100% sure
+flutter clean
 flutter precache --web
 flutter config --enable-web
 flutter pub get
 flutter build web --release --no-web-resources-cdn
 
-# 8. Move output to the expected location if necessary (Vercel uses build/web by default)
+# 7. Move output to the expected location if necessary (Vercel uses build/web by default)
 echo "Build complete!"
