@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/recommended_article_model.dart';
 import '../providers_recommended.dart';
 import '../core/theme.dart';
+import '../widgets/external_image_widget.dart'; // Import the new widget
 
 class RecommendedContentScreen extends ConsumerStatefulWidget {
   const RecommendedContentScreen({super.key});
@@ -175,31 +176,11 @@ class _Section extends StatelessWidget {
                    child: item.imageUrl != null 
                      ? ClipRRect(
                          borderRadius: BorderRadius.circular(8),
-                         child: Image.network(
-                           item.imageUrl!,
+                         child: ExternalImageWidget(
+                           imageUrl: item.imageUrl!,
                            width: 64,
                            height: 64,
                            fit: BoxFit.cover,
-                           errorBuilder: (context, error, stackTrace) {
-                             return const Icon(Icons.image, color: Colors.grey, size: 32,);
-                           },
-                           loadingBuilder: (context, child, loadingStatus) {
-                             if (loadingStatus != null) {
-                               return Center(
-                                 child: SizedBox(
-                                   width: 24,
-                                   height: 24,
-                                   child: CircularProgressIndicator(
-                                     strokeWidth: 2,
-                                     value: loadingStatus.expectedTotalBytes != null
-                                         ? loadingStatus.cumulativeBytesLoaded / loadingStatus.expectedTotalBytes!
-                                         : null,
-                                   ),
-                                 ),
-                               );
-                             }
-                             return child;
-                           },
                          ),
                        )
                      : const Icon(Icons.image, color: Colors.grey, size: 32,),
@@ -220,7 +201,7 @@ class _Section extends StatelessWidget {
                ],
              ),
           ),
-        )),
+        )).toList(),
       ],
     );
   }
