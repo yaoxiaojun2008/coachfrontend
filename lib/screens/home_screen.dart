@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../providers.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
+import 'package:flutter/foundation.dart'; // Needed for platform detection
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +26,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       currentRoute: '/',
       child: ListView(
         padding: const EdgeInsets.all(16),
+        primary: true,  // Add this to ensure the ListView uses the PrimaryScrollController
         children: [
           // Header
           Container(
@@ -238,92 +240,141 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                _TutorCard(
-                  title: 'Writing Coach',
-                  description: 'Improve grammar and style with real-time AI feedback.',
-                  icon: Icons.edit_note,
-                  bgImage: 'assets/images/tutors/writing-coach-bg.jpg',
-                  onStart: () => context.push('/writing-coach'),
-                  onHistory: () => context.push('/writing-history'),
-                  buttonText: 'Start Writing',
-                ),
-                const SizedBox(height: 16),
-                _TutorCard(
-                  title: 'Reading Coach',
-                  description: 'Practice comprehension with smart interactive quizzes.',
-                  icon: Icons.auto_stories,
-                  bgImage: 'assets/images/tutors/reading-coach-bg.jpg',
-                  onStart: () => context.push('/reading-coach'),
-                  onHistory: () => context.push('/history'),
-                  buttonText: 'Take Quiz',
-                ),
-                const SizedBox(height: 16),
-                // Live AI Tutor Card
-                 Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primary, Colors.blue.shade700],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                       BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0,4))
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Show side by side on web/desktop, stacked on mobile
+                if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)) {
+                  // Mobile layout - stacked vertically
+                  return Column(
+                    children: [
+                      _TutorCard(
+                        title: 'Writing Coach',
+                        description: 'Improve grammar and style with real-time AI feedback.',
+                        icon: Icons.edit_note,
+                        bgImage: 'assets/images/tutors/writing-coach-bg.jpg',
+                        onStart: () => context.push('/writing-coach'),
+                        onHistory: () => context.push('/writing-history'),
+                        buttonText: 'Start Writing',
+                      ),
+                      const SizedBox(height: 16),
+                      _TutorCard(
+                        title: 'Reading Coach',
+                        description: 'Practice comprehension with smart interactive quizzes.',
+                        icon: Icons.auto_stories,
+                        bgImage: 'assets/images/tutors/reading-coach-bg.jpg',
+                        onStart: () => context.push('/reading-coach'),
+                        onHistory: () => context.push('/history'),
+                        buttonText: 'Take Quiz',
+                      ),
+                      const SizedBox(height: 16),
+                      // Live AI Tutor Card
+                      _buildLiveAITutorCard(context),
                     ],
-                  ),
-                  child: Column(
+                  );
+                } else {
+                  // Web/desktop layout - side by side
+                  return Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.forum, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Live AI Tutor', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                              Text(
-                                'Speak with your AI anytime.',
-                                style: TextStyle(color: Colors.blue.shade100, fontSize: 12),
-                              )
-                            ],
-                          ),
-                          Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
+                          Expanded(
+                            child: _TutorCard(
+                              title: 'Writing Coach',
+                              description: 'Improve grammar and style with real-time AI feedback.',
+                              icon: Icons.edit_note,
+                              bgImage: 'assets/images/tutors/writing-coach-bg.jpg',
+                              onStart: () => context.push('/writing-coach'),
+                              onHistory: () => context.push('/writing-history'),
+                              buttonText: 'Start Writing',
                             ),
-                            child: const Icon(Icons.graphic_eq, color: Colors.white),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _TutorCard(
+                              title: 'Reading Coach',
+                              description: 'Practice comprehension with smart interactive quizzes.',
+                              icon: Icons.auto_stories,
+                              bgImage: 'assets/images/tutors/reading-coach-bg.jpg',
+                              onStart: () => context.push('/reading-coach'),
+                              onHistory: () => context.push('/history'),
+                              buttonText: 'Take Quiz',
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => context.push('/chat'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppTheme.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text('Start Conversation', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      )
+                      // Live AI Tutor Card
+                      _buildLiveAITutorCard(context),
                     ],
-                  ),
-                ),
-              ],
+                  );
+                }
+              },
             ),
           ),
+        ],
+      ),
+    );
+  }
+  
+  // Extract the Live AI Tutor card to a separate method for reusability
+  Widget _buildLiveAITutorCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primary, Colors.blue.shade700],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0,4))
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.forum, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Live AI Tutor', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Text(
+                    'Speak with your AI anytime.',
+                    style: TextStyle(color: Colors.blue.shade100, fontSize: 12),
+                  )
+                ],
+              ),
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.graphic_eq, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => context.push('/chat'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppTheme.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Start Conversation', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          )
         ],
       ),
     );

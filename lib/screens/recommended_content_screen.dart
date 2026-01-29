@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart'; 
 import 'package:intl/intl.dart';
+import 'dart:typed_data'; // Added for Uint8List
 import '../models/recommended_article_model.dart';
 import '../providers_recommended.dart';
 import '../core/theme.dart';
-import '../widgets/external_image_widget.dart'; // Import the new widget
 
 class RecommendedContentScreen extends ConsumerStatefulWidget {
   const RecommendedContentScreen({super.key});
@@ -14,6 +14,16 @@ class RecommendedContentScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<RecommendedContentScreen> createState() => _RecommendedContentScreenState();
 }
+
+// Transparent 1x1 PNG image - now defined as a function instead of a const
+final Uint8List kTransparentImage = Uint8List.fromList(<int>[
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+  0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x00, 0x01, 0x00, 0x00,
+  0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+  0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+]);
 
 class _RecommendedContentScreenState extends ConsumerState<RecommendedContentScreen> {
   bool _isLoading = true;
@@ -176,12 +186,8 @@ class _Section extends StatelessWidget {
                    child: item.imageUrl != null 
                      ? ClipRRect(
                          borderRadius: BorderRadius.circular(8),
-                         child: ExternalImageWidget(
-                           imageUrl: item.imageUrl!,
-                           width: 64,
-                           height: 64,
-                           fit: BoxFit.cover,
-                         ),
+                         // Using a custom image loading approach to better handle CORS issues
+                         child: _buildThumbnailImage(item.imageUrl!),
                        )
                      : const Icon(Icons.image, color: Colors.grey, size: 32,),
                  ),
@@ -204,5 +210,44 @@ class _Section extends StatelessWidget {
         )).toList(),
       ],
     );
+  }
+  
+  // Custom method to build image with better error handling for CORS
+  Widget _buildThumbnailImage(String imageUrl) {
+    // Check if the URL is from a domain known to have CORS issues
+    // For such domains, we'll still try to load but with improved error handling
+    bool hasKnownCORSIssue = imageUrl.contains('fsdn.com');
+    
+    return FadeInImage(
+      placeholder: MemoryImage(kTransparentImage),
+      image: NetworkImage(_sanitizeImageUrl(imageUrl)),
+      width: 64,
+      height: 64,
+      fit: BoxFit.cover,
+      // Improved error handling to show a more meaningful icon
+      imageErrorBuilder: (context, error, stackTrace) {
+        // Log the error for debugging purposes
+        debugPrint('Failed to load image: $imageUrl, Error: $error');
+        
+        // For URLs known to have CORS issues, we show a warning icon
+        IconData iconToShow = hasKnownCORSIssue 
+            ? Icons.warning_amber_outlined 
+            : Icons.broken_image_outlined;
+            
+        return Container(
+          color: Colors.grey[300],
+          width: 64,
+          height: 64,
+          child: Icon(iconToShow, color: Colors.grey[600]),
+        );
+      },
+    );
+  }
+  
+  // Sanitize image URL to prevent some common issues
+  String _sanitizeImageUrl(String imageUrl) {
+    // Remove fragments and normalize the URL
+    var uri = Uri.parse(imageUrl);
+    return uri.replace(fragment: "").toString();
   }
 }
